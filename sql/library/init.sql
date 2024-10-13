@@ -20,13 +20,13 @@ CREATE TABLE IF NOT EXISTS Book (
     Number_of_pages INT NOT NULL,
     Year INT NOT NULL,
     Publisher_Name VARCHAR(100),
-    FOREIGN KEY (Publisher_Name) REFERENCES Publisher(PubName)
+    FOREIGN KEY (Publisher_Name) REFERENCES Publisher(PubName) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS Category (
     CategoryName VARCHAR(50) PRIMARY KEY,
     ParentCat VARCHAR(50),
-    FOREIGN KEY (ParentCat) REFERENCES Category(CategoryName)
+    FOREIGN KEY (ParentCat) REFERENCES Category(CategoryName) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Copy (
@@ -34,15 +34,15 @@ CREATE TABLE IF NOT EXISTS Copy (
     CopyNumber INT,
     Position VARCHAR(50),
     PRIMARY KEY (ISBN, CopyNumber),
-    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS BookCategory (
     ISBN VARCHAR(13),
     CategoryName VARCHAR(50),
     PRIMARY KEY (ISBN, CategoryName),
-    FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
-    FOREIGN KEY (CategoryName) REFERENCES Category(CategoryName)
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN) ON DELETE CASCADE,
+    FOREIGN KEY (CategoryName) REFERENCES Category(CategoryName) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Borrowing (
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS Borrowing (
     ReturnDate DATE,
     PRIMARY KEY (ID, ISBN, CopyNumber),
     FOREIGN KEY (ID) REFERENCES Reader(ID),
-    FOREIGN KEY (ISBN, CopyNumber) REFERENCES Copy(ISBN, CopyNumber)
+    FOREIGN KEY (ISBN, CopyNumber) REFERENCES Copy(ISBN, CopyNumber) ON DELETE CASCADE
 );
 
 -- Процедура генерации категорий
