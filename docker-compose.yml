@@ -25,9 +25,23 @@ services:
       - ./sql/train/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - less_5_network
+  olipm:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: superadmin
+      POSTGRES_PASSWORD: superadmin
+      POSTGRES_DB: olimp
+    ports:
+      - "5440:5432"
+    volumes:
+      - olimp_bd_data:/var/lib/postgresql/data
+      - ./sql/olimp/:/docker-entrypoint-initdb.d/
+    networks:
+      - less_5_network
 volumes:
   library_bd_data:
   train_bd_data:
+  olimp_bd_data:
 networks:
   less_5_network:
       driver: bridge
