@@ -171,44 +171,52 @@ $$
 $$ LANGUAGE plpgsql;
 
 -- Процедура генерации читателей
--- DO
--- $$
---     DECLARE
---         i INT := 1;
---     BEGIN
---         WHILE i <= 5000
---             LOOP
---                 INSERT INTO Reader (LastName, FirstName, Address, BirthDate)
---                 VALUES (
---                     CONCAT('LastName', i),
---                     CONCAT('FirstName', i),
---                     CONCAT('Address ', i),
---                     CURRENT_DATE - INTERVAL '18 years' - INTERVAL '1 year' * FLOOR(RANDOM() * 52)
---                 );
---                 i := i + 1;
---             END LOOP;
---     END
--- $$ LANGUAGE plpgsql;
+DO
+$$
+    DECLARE
+        i INT := 1;
+    BEGIN
+        WHILE i <= 5000
+            LOOP
+                INSERT INTO Reader (LastName, FirstName, Address, BirthDate)
+                VALUES (
+                    CONCAT('LastName', i),
+                    CONCAT('FirstName', i),
+                    CONCAT('Address ', i),
+                    CURRENT_DATE - INTERVAL '18 years' - INTERVAL '1 year' * FLOOR(RANDOM() * 52)
+                );
+                i := i + 1;
+            END LOOP;
+    END
+$$ LANGUAGE plpgsql;
 
 -- Процедура генерации заимствований книг
 DO
 $$
     DECLARE
         i INT := 1;
+        reader_count INT;
+        copy_count INT;
     BEGIN
+        -- Получаем количество записей в таблицах Reader и Copy
+        SELECT COUNT(*) INTO reader_count FROM Reader;
+        SELECT COUNT(*) INTO copy_count FROM Copy;
+
         WHILE i <= 100
-            LOOP
-                INSERT INTO Borrowing (ID, ISBN, CopyNumber, ReturnDate)
-                SELECT r.ID,
-                       c.ISBN,
-                       c.CopyNumber,
-                       CURRENT_DATE + INTERVAL '1 day' * FLOOR(RANDOM() * 30)
-                FROM Reader r
-                         CROSS JOIN Copy c
-                ORDER BY RANDOM()
-                LIMIT 1;
-                i := i + 1;
-            END LOOP;
+        LOOP
+            -- Генерируем случайные индексы для выборки
+            INSERT INTO Borrowing (ID, ISBN, CopyNumber, ReturnDate)
+            SELECT r.ID,
+                   c.ISBN,
+                   c.CopyNumber,
+                   CURRENT_DATE + INTERVAL '1 day' * FLOOR(RANDOM() * 30)
+            FROM Reader r
+            JOIN Copy c ON TRUE
+            WHERE r.ID = (SELECT ID FROM Reader OFFSET FLOOR(RANDOM() * reader_count) LIMIT 1)
+              AND c.ISBN = (SELECT ISBN FROM Copy OFFSET FLOOR(RANDOM() * copy_count) LIMIT 1)
+            LIMIT 1;
+            i := i + 1;
+        END LOOP;
     END
 $$ LANGUAGE plpgsql;
 
@@ -256,10 +264,19 @@ VALUES ('1234567890123', 1, 'Полка А1'),
        ('4567890123456', 1, 'Полка Г1'),
        ('5678901234567', 1, 'Полка Д1');
 
+-- Ensure the reader table has the necessary IDs
+INSERT INTO Reader (ID, LastName, FirstName, Address, BirthDate)
+VALUES (10001, 'Reader One', 'FirstName1', 'Address 1', '1990-01-01'),
+       (10002, 'Reader Two', 'FirstName2', 'Address 2', '1991-02-02'),
+       (10003, 'Reader Three', 'FirstName3', 'Address 3', '1992-03-03'),
+       (10004, 'Reader Four', 'FirstName4', 'Address 4', '1993-04-04'),
+       (10005, 'Reader Five', 'FirstName5', 'Address 5', '1994-05-05');
+
+-- Insert into Borrowing table
 INSERT INTO Borrowing (ID, ISBN, CopyNumber, ReturnDate)
-VALUES (1, '1234567890123', 1, '2024-01-15'),
-       (1, '2345678901234', 1, '2024-02-01'),
-       (2, '1234567890123', 2, NULL),
-       (3, '3456789012345', 1, '2024-03-01'),
-       (4, '1234567890123', 1, '2024-03-15'),
-       (5, '4567890123456', 1, '2024-03-20');
+VALUES (10001, '1234567890123', 1, '2024-01-15'),
+       (10001, '2345678901234', 1, '2024-02-01'),
+       (10002, '1234567890123', 2, NULL),
+       (10003, '3456789012345', 1, '2024-03-01'),
+       (10004, '1234567890123', 1, '2024-03-15'),
+       (10005, '4567890123456', 1, '2024-03-20');
